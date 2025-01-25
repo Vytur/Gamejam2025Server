@@ -26,7 +26,7 @@ app.get('/', (req, res) => {
 });
 
 // Grid configuration
-const gridSize = 100;
+const gridSize = 10;
 const tiles = Array.from({ length: gridSize }, () =>
     Array.from({ length: gridSize }, () => false)
 );
