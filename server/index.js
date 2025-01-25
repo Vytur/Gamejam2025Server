@@ -25,9 +25,21 @@ app.get('/', (req, res) => {
     res.send('Socket.IO server is running with Express!');
 });
 
-// Handle Socket.IO connections
+// Grid configuration
+const gridSize = 1000;
+const tiles = Array.from({ length: gridSize }, () =>
+    Array.from({ length: gridSize }, () => false)
+);
+
+// Set the center tile to pure
+tiles[Math.floor(gridSize / 2)][Math.floor(gridSize / 2)] = true;
+
+// Keep track of connected users and their cursors
+const users = {};
+
 io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
+    users[socket.id] = { position: { x: 0, y: 0 } };
 
     // Emit a connection event to Unity
     socket.emit('connection', { date: new Date().getTime(), data: "Hello Unity" });
@@ -38,16 +50,70 @@ io.on('connection', (socket) => {
         socket.emit('hello', { date: new Date().getTime(), data: data });
     });
 
-    // Example: Spin an object in Unity
-    socket.on('spin', () => {
-        socket.emit('spin', { date: new Date().getTime() });
+    // Synchronize cursor movements
+    socket.on('cursor_movement', (data) => {
+        const { position } = data;
+        if (position) {
+            users[socket.id].position = position;
+            // Broadcast to other clients
+            socket.broadcast.emit('update_cursor', { id: socket.id, position });
+        }
+    });
+
+    // Handle tile purification
+    socket.on('purify_tile', (data) => {
+        const { position } = data;
+
+        if (!position) return;
+
+        const { x, y } = position;
+        if (!tiles[x] || !tiles[x][y]) return; // Invalid tile
+
+        const neighbors = [
+            { x: 0, y: 1 },
+            { x: 0, y: -1 },
+            { x: 1, y: 0 },
+            { x: -1, y: 0 },
+        ];
+
+        // Check if any neighbor is purified
+        const canPurify = neighbors.some((dir) => {
+            const nx = x + dir.x;
+            const ny = y + dir.y;
+            return tiles[nx]?.[ny] ?? false;
+        });
+
+        if (canPurify) {
+            tiles[x][y] = true; // Set the tile to purified
+            io.emit('update_tile', { position: { x, y }, isPurified: true });
+        }
     });
 
     // Handle disconnection
     socket.on('disconnect', () => {
         console.log(`User disconnected: ${socket.id}`);
+        delete users[socket.id];
+        io.emit('remove_cursor', { id: socket.id });
     });
 });
+
+// Corruption mechanics
+setInterval(() => {
+    for (let x = 0; x < gridSize; x++) {
+        for (let y = 0; y < gridSize; y++) {
+            if (tiles[x][y]) {
+                // Determine chance of corruption based on distance from the center
+                const distance = Math.hypot(x - gridSize / 2, y - gridSize / 2);
+                const corruptionChance = Math.min(distance / 100, 0.99);
+
+                if (Math.random() < corruptionChance) {
+                    tiles[x][y] = false; // Corrupt the tile
+                    io.emit('update_tile', { position: { x, y }, isPurified: false });
+                }
+            }
+        }
+    }
+}, 1000); // Adjust the interval as needed
 
 // Start the server
 server.listen(PORT, () => {
