@@ -98,6 +98,17 @@ io.on("connection", (socket) => {
   });
 });
 
+// Function to generate grid data for the client
+function generateGridData() {
+  const gridData = {};
+  for (let x = 0; x < gridSize; x++) {
+    for (let y = 0; y < gridSize; y++) {
+      gridData[`${x}_${y}`] = { isPurified: tiles[x][y] };
+    }
+  }
+  return gridData;
+}
+
 // Corruption mechanics
 setInterval(() => {
   for (let x = 0; x < gridSize; x++) {
