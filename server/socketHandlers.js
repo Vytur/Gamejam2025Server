@@ -8,18 +8,6 @@ function setupSocketHandlers(io) {
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // Emit connection acknowledgment
-    socket.emit("connection", {
-      date: new Date().getTime(),
-      data: "Hello Unity",
-    });
-
-    // Handle "hello" event
-    socket.on("hello", (data) => {
-      console.log(`Received 'hello' event: ${JSON.stringify(data)}`);
-      socket.emit("hello", { date: new Date().getTime(), data });
-    });
-
     // Handle cursor movement
     socket.on("cursor_movement", (data) => {
       try {
