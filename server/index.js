@@ -41,13 +41,16 @@ io.on('connection', (socket) => {
     console.log(`User connected: ${socket.id}`);
     users[socket.id] = { position: { x: 0, y: 0 } };
 
-    // Emit a connection event to Unity
+    // Emit the connection event to Unity
     socket.emit('connection', { date: new Date().getTime(), data: "Hello Unity" });
 
-    // Example: Listen for 'hello' event from Unity
-    socket.on('hello', (data) => {
-        console.log(`Received 'hello' event: ${JSON.stringify(data)}`);
-        socket.emit('hello', { date: new Date().getTime(), data: data });
+    // Emit grid data to the client after connection
+    socket.on('request_grid_data', () => {
+        socket.emit('grid_data', {
+            gridSize: gridSize,
+            gridData: generateGridData()
+        });
+        console.log("data requested");
     });
 
     // Synchronize cursor movements
@@ -96,6 +99,17 @@ io.on('connection', (socket) => {
         io.emit('remove_cursor', { id: socket.id });
     });
 });
+
+// Function to generate grid data for the client
+function generateGridData() {
+    const gridData = {};
+    for (let x = 0; x < gridSize; x++) {
+        for (let y = 0; y < gridSize; y++) {
+            gridData[`${x}_${y}`] = { isPurified: tiles[x][y] };
+        }
+    }
+    return gridData;
+}
 
 // Corruption mechanics
 setInterval(() => {
