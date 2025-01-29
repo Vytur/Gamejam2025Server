@@ -2,7 +2,6 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const { PORT } = require("./config");
-const { initializeGrid, tiles } = require("./grid");
 const setupSocketHandlers = require("./socketHandlers");
 const applyCorruption = require("./corruption");
 
@@ -20,14 +19,11 @@ app.get("/", (req, res) => {
   res.send("Socket.IO server is running with Express!");
 });
 
-// Initialize grid
-initializeGrid();
-
 // Set up Socket.IO event handlers
 setupSocketHandlers(io);
 
 // Start corruption mechanic
-setInterval(() => applyCorruption(io), 1000);
+//setInterval(() => applyCorruption(io), 1000);
 
 // Start server
 server.listen(PORT, () => {

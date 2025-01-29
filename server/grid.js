@@ -1,40 +1,49 @@
-const { GRID_SIZE } = require("./config");
+const { GRID_SIZE, VIEWPORT_SIZE } = require("./config");
 
-// Grid storage
-const tiles = [];
+// Simulated Grid (0 = pure, 1 = corrupted)
+let grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(1));
 
-/**
- * Initializes the grid with default values.
- */
-function initializeGrid() {
-  for (let x = 0; x < GRID_SIZE; x++) {
-    tiles[x] = [];
-    for (let y = 0; y < GRID_SIZE; y++) {
-      tiles[x][y] = false;
-    }
-  }
+// Set the center tile to blue (starting point)
+grid[Math.floor(GRID_SIZE / 2)][Math.floor(GRID_SIZE / 2)] = 0;
 
-  // Set the center tile to purified
-  const center = Math.floor(GRID_SIZE / 2);
-  tiles[center][center] = true;
-}
-
-/**
- * Checks if a tile can be purified based on its neighbors.
- */
-function canPurifyTile(x, y) {
-  const neighbors = [
-    { x: 0, y: 1 },
-    { x: 0, y: -1 },
-    { x: 1, y: 0 },
-    { x: -1, y: 0 },
+// Function to check if a tile is adjacent to pure (blue) tile
+function isAdjacentToBlue(x, y) {
+  const directions = [
+      [0, -1], [-1, 0], [1, 0], [0, 1] // Up, Left, Right, Down
   ];
-
-  return neighbors.some((dir) => {
-    const nx = x + dir.x;
-    const ny = y + dir.y;
-    return tiles[nx]?.[ny] ?? false;
+  return directions.some(([dx, dy]) => {
+      let nx = x + dx;
+      let ny = y + dy;
+      return nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && grid[ny][nx] === 0;
   });
 }
 
-module.exports = { tiles, initializeGrid, canPurifyTile };
+// Function to get a grid chunk (client's viewport)
+function getViewport(x, y) {
+  let viewport = [];
+  for (let i = y; i < y + VIEWPORT_SIZE; i++) {
+      viewport.push(grid[i].slice(x, x + VIEWPORT_SIZE));
+  }
+  return viewport;
+}
+
+function getFullGrid() {
+  return grid.map(row => [...row]);
+}
+
+// Update a tile (only if it's red AND adjacent to a blue tile)
+function updateTile(x, y, color) {
+  if (
+      x >= 0 && x < GRID_SIZE &&
+      y >= 0 && y < GRID_SIZE &&
+      grid[y][x] === 1 && // Only change red tiles
+      color === 0 && // Only allow red → blue conversion
+      isAdjacentToBlue(x, y) // Must be adjacent to blue
+  ) {
+      grid[y][x] = color;
+      return true; // Tile successfully changed
+  }
+  return false; // Invalid move
+}
+
+module.exports = { getViewport, updateTile, getFullGrid };
