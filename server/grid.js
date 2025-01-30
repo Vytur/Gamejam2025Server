@@ -21,9 +21,13 @@ function isAdjacentToBlue(x, y) {
 // Function to get a grid chunk (client's viewport)
 function getViewport(x, y) {
   let viewport = [];
-  for (let i = y; i < y + VIEWPORT_SIZE; i++) {
-      viewport.push(grid[i].slice(x, x + VIEWPORT_SIZE));
+
+  for (let i = y; i < y + VIEWPORT_SIZE && i < GRID_SIZE; i++) {
+    if (grid[i]) { // Ensure grid[i] exists before calling slice()
+      viewport.push(grid[i].slice(x, Math.min(x + VIEWPORT_SIZE, GRID_SIZE)));
+    }
   }
+
   return viewport;
 }
 
