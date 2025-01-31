@@ -2,6 +2,7 @@ const { GRID_SIZE } = require("./config");
 const { updateTile, getFullGrid } = require('./grid');
 const CursorManager = require('./cursorManager');
 const CursorsSocketHandler = require('./cursorsSocketHandler');
+const applyCorruption = require("./corruption");
 
 // Store client viewports
 let clients = {}; // { socketId: { x, y } }
@@ -10,6 +11,9 @@ let clients = {}; // { socketId: { x, y } }
 function setupSocketHandlers(io) {
   const cursorManager = new CursorManager();
   const cursorsHandler = new CursorsSocketHandler(io, cursorManager);
+
+  // Start corruption mechanic
+  setInterval(() => applyCorruption(io), 1000);
 
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);

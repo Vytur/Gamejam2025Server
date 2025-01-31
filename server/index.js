@@ -3,7 +3,6 @@ const http = require("http");
 const { Server } = require("socket.io");
 const { PORT } = require("./config");
 const setupSocketHandlers = require("./socketHandlers");
-const applyCorruption = require("./corruption");
 
 // Initialize Express and Socket.IO
 const app = express();
@@ -21,9 +20,6 @@ app.get("/", (req, res) => {
 
 // Set up Socket.IO event handlers
 setupSocketHandlers(io);
-
-// Start corruption mechanic
-//setInterval(() => applyCorruption(io), 1000);
 
 // Start server
 server.listen(PORT, () => {
