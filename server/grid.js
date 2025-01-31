@@ -1,4 +1,4 @@
-const { GRID_SIZE, VIEWPORT_SIZE } = require("./config");
+const { GRID_SIZE } = require("./config");
 
 // Simulated Grid (0 = pure, 1 = corrupted)
 let grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(1));
@@ -16,19 +16,6 @@ function isAdjacentToBlue(x, y) {
       let ny = y + dy;
       return nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && grid[ny][nx] === 0;
   });
-}
-
-// Function to get a grid chunk (client's viewport)
-function getViewport(x, y) {
-  let viewport = [];
-
-  for (let i = y; i < y + VIEWPORT_SIZE && i < GRID_SIZE; i++) {
-    if (grid[i]) { // Ensure grid[i] exists before calling slice()
-      viewport.push(grid[i].slice(x, Math.min(x + VIEWPORT_SIZE, GRID_SIZE)));
-    }
-  }
-
-  return viewport;
 }
 
 function getFullGrid() {
@@ -50,4 +37,4 @@ function updateTile(x, y, color) {
   return false; // Invalid move
 }
 
-module.exports = { getViewport, updateTile, getFullGrid };
+module.exports = { updateTile, getFullGrid };

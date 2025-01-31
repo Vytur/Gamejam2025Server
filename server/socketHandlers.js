@@ -1,15 +1,21 @@
-const { GRID_SIZE, VIEWPORT_SIZE } = require("./config");
+const { GRID_SIZE } = require("./config");
 const { updateTile, getFullGrid } = require('./grid');
+const CursorManager = require('./cursorManager');
+const CursorsSocketHandler = require('./cursorsSocketHandler');
 
 // Store client viewports
 let clients = {}; // { socketId: { x, y } }
 
-/**
- * Sets up Socket.IO event handlers.
- */
+//Sets up Socket.IO event handlers.
 function setupSocketHandlers(io) {
+  const cursorManager = new CursorManager();
+  const cursorsHandler = new CursorsSocketHandler(io, cursorManager);
+
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
+
+    // Handle cursor-related events
+    cursorsHandler.handleConnection(socket);
 
     // Set initial position
     let startX = GRID_SIZE * 0.5;
@@ -26,7 +32,7 @@ function setupSocketHandlers(io) {
     // Handle tile color changes
     socket.on("change_tile", ({ x, y, color }) => {
       if (updateTile(x, y, color)) {
-        // Only notify clients who can see this tile
+        // Only notify clients who can see this tile?
         Object.entries(clients).forEach(([id, { x: vx, y: vy }]) => {        
             io.to(id).emit("tile_update", { x, y, color });    
         });
