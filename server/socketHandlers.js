@@ -1,54 +1,46 @@
-const { GRID_SIZE } = require("./config");
-const { updateTile, getFullGrid } = require('./grid');
 const CursorManager = require('./cursorManager');
 const CursorsSocketHandler = require('./cursorsSocketHandler');
-const applyCorruption = require("./corruption");
+const ClientInventoryManager = require('./clientInventoryManager');
+const GridSocketHandler = require('./gridSocketHandler');
+const InventorySocketHandler = require('./inventorySocketHandler');
+const Grid = require('./grid');
+const CorruptionManager = require('./corruptionManager');
 
 // Store client viewports
 let clients = {}; // { socketId: { x, y } }
 
 //Sets up Socket.IO event handlers.
 function setupSocketHandlers(io) {
+  // Initialize managers and handlers
   const cursorManager = new CursorManager();
   const cursorsHandler = new CursorsSocketHandler(io, cursorManager);
+  
+  const inventoryManager = new ClientInventoryManager();
+  const inventoryHandler = new InventorySocketHandler(io, inventoryManager);
+  
+  const grid = new Grid();
+  const gridHandler = new GridSocketHandler(io, grid);
 
-  // Start corruption mechanic
-  setInterval(() => applyCorruption(io), 1000);
+  // Create corruption manager and start cycle
+  const corruptionManager = new CorruptionManager(grid);
+  corruptionManager.startCorruptionCycle(io);
 
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
 
-    // Handle cursor-related events
+    // Handle different aspects of client connection
     cursorsHandler.handleConnection(socket);
-
-    // Set initial position
-    let startX = GRID_SIZE * 0.5;
-    let startY = GRID_SIZE * 0.5;
-    clients[socket.id] = { x: startX, y: startY };
-
-    // Send initial grid chunk
-    socket.emit("init_grid", {
-      x: startX,
-      y: startY,
-      grid: getFullGrid(),
-    });
-
-    // Handle tile color changes
-    socket.on("change_tile", ({ x, y, color }) => {
-      if (updateTile(x, y, color)) {
-        // Only notify clients who can see this tile?
-        Object.entries(clients).forEach(([id, { x: vx, y: vy }]) => {        
-            io.to(id).emit("tile_update", { x, y, color });    
-        });
-      } else {
-        socket.emit("invalid_move", { x, y });
-      }
-    });
+    inventoryHandler.handleConnection(socket);
+    gridHandler.handleConnection(socket, clients, inventoryManager);
 
     // Handle disconnection
     socket.on("disconnect", () => {
       console.log(`User disconnected: ${socket.id}`);
-      delete clients[socket.id];
+      
+      //cursorsHandler.handleDisconnection(socket.id);
+      inventoryHandler.handleDisconnection(socket.id);
+      gridHandler.handleDisconnection(socket.id, clients);
+      
       io.emit("remove_cursor", { id: socket.id });
     });
   });
