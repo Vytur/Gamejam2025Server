@@ -35,12 +35,7 @@ class GridSocketHandler {
             if (Math.random() < 0.1) { // 10% chance of getting coins
               const coinReward = this.calculateCoinReward(x, y);
               if (coinReward > 0) {
-                inventoryManager.addCoins(socket.id, coinReward);
-                socket.emit("coin_reward", { 
-                  amount: coinReward, 
-                  x, 
-                  y 
-                });
+                inventoryManager.addCoins(socket.id, coinReward);               
   
                 // Send updated inventory to the client
                 socket.emit("inventory_update", inventoryManager.getInventory(socket.id));

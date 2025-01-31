@@ -13,16 +13,11 @@ class InventorySocketHandler {
       // Initialize client inventory on connection
       this.inventoryManager.initializeClient(socket.id);
   
-      // Send initial inventory
-      socket.emit("inventory_init", 
-        this.inventoryManager.getInventory(socket.id)
-      );
-  
       // Handle inventory-related events
-      socket.on("get_inventory", () => {
-        socket.emit("inventory_data", 
-          this.inventoryManager.getInventory(socket.id)
-        );
+      socket.on("request_inventory", () => {
+        socket.emit("inventory_init", 
+            this.inventoryManager.getInventory(socket.id)
+          );
       });
   
       // Optional: Add more inventory-related events
